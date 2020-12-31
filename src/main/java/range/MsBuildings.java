@@ -9,18 +9,18 @@ import org.datasyslab.geospark.enums.GridType;
 import org.datasyslab.geospark.enums.IndexType;
 import org.datasyslab.geospark.spatialOperator.RangeQuery;
 import org.datasyslab.geospark.spatialRDD.PolygonRDD;
+import org.datasyslab.geosparkviz.core.Serde.GeoSparkVizKryoRegistrator;
 import random_mbr_generator.GenerateWithSelectivity;
 import reading_scripts.MSBuildings_UCRstar;
 
 import java.util.ArrayList;
-import java.util.Random;
 
 public class MsBuildings {
 
     public static void main(String[] args) throws Exception {
         SparkConf conf = new SparkConf().setAppName("GeoSparkRunnableExample").setMaster("local[*]");
         conf.set("spark.serializer", KryoSerializer.class.getName());
-        //conf.set("spark.kryo.registrator", GeoSparkVizKryoRegistrator.class.getName());
+        conf.set("spark.kryo.registrator", GeoSparkVizKryoRegistrator.class.getName());
         JavaSparkContext sc = new JavaSparkContext(conf);
         PolygonRDD MSbuilding = MSBuildings_UCRstar.getMSBuilding(sc);
         MSbuilding.analyze();
@@ -32,10 +32,10 @@ public class MsBuildings {
         long seed = 22;
         Envelope boundary = MSbuilding.boundaryEnvelope;
         GenerateWithSelectivity gws = new GenerateWithSelectivity(boundary.getMinX(), boundary.getMaxX(), boundary.getMinY(), boundary.getMaxY(), selectivity, seed);
-        ar = rawrdd_indexing_range(sc, MSbuilding, IndexType.RTREE, gws);
-        ar2 = partitioning_indexing_range(sc, MSbuilding, GridType.EQUALGRID, IndexType.RTREE, numPartitions, gws);
-        ar3 = partitioning_indexing_range(sc, MSbuilding, GridType.RTREE, IndexType.RTREE, numPartitions, gws);
-        ar4 = partitioning_indexing_range(sc, MSbuilding, GridType.QUADTREE, IndexType.RTREE, numPartitions, gws);
+        ar = rawrdd_indexing_range( MSbuilding, IndexType.RTREE, gws);
+        ar2 = partitioning_indexing_range(MSbuilding, GridType.EQUALGRID, IndexType.RTREE, numPartitions, gws);
+        ar3 = partitioning_indexing_range(MSbuilding, GridType.RTREE, IndexType.RTREE, numPartitions, gws);
+        ar4 = partitioning_indexing_range(MSbuilding, GridType.QUADTREE, IndexType.RTREE, numPartitions, gws);
         ar.forEach(r -> System.out.printf("%d ", r));
         System.out.println();
         ar2.forEach(r -> System.out.printf("%d ", r));
@@ -45,7 +45,7 @@ public class MsBuildings {
         ar4.forEach(r -> System.out.printf("%d ", r));
     }
 
-    private static ArrayList<Long> rawrdd_indexing_range(JavaSparkContext sc, PolygonRDD mSbuilding, IndexType indextype, GenerateWithSelectivity gws) throws Exception {
+    private static ArrayList<Long> rawrdd_indexing_range(PolygonRDD mSbuilding, IndexType indextype, GenerateWithSelectivity gws) throws Exception {
         gws.resetseed();
         mSbuilding.buildIndex(indextype, false);
         mSbuilding.indexedRawRDD.persist(StorageLevel.MEMORY_ONLY());
@@ -59,7 +59,7 @@ public class MsBuildings {
         return ar;
     }
 
-    static ArrayList<Long> partitioning_indexing_range(JavaSparkContext sc, PolygonRDD mSbuilding, GridType gridtype, IndexType indextype, int numPartitions, GenerateWithSelectivity gws) throws Exception {
+    static ArrayList<Long> partitioning_indexing_range(PolygonRDD mSbuilding, GridType gridtype, IndexType indextype, int numPartitions, GenerateWithSelectivity gws) throws Exception {
         gws.resetseed();
         mSbuilding.spatialPartitioning(gridtype, numPartitions);
         mSbuilding.buildIndex(indextype, true);
