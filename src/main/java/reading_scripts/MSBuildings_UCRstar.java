@@ -14,6 +14,20 @@ import java.util.Random;
 
 public class MSBuildings_UCRstar {
 
+    public static PolygonRDD getMSBuilding(JavaSparkContext sc){
+        String resourceFolder = System.getProperty("user.dir")+"/src/main/resources/";
+
+        String PolygonRDDInputLocation = resourceFolder + "MSBuildings_UCRstar_small.csv";
+        String outputFile = resourceFolder + "MSBuildings_saveAsTextFile_" + new Random().nextInt();
+
+        FileDataSplitter PolygonRDDSplitter = FileDataSplitter.WKT;
+        Integer PolygonRDDNumPartitions = 1;
+        Integer PolygonRDDStartOffset = 0;
+        Integer PolygonRDDEndOffset = -1;
+
+        return new PolygonRDD(sc,PolygonRDDInputLocation,PolygonRDDStartOffset, PolygonRDDEndOffset, PolygonRDDSplitter, true,PolygonRDDNumPartitions);
+
+    }
     public static void main(String[] args) {
         SparkConf conf = new SparkConf().setAppName("GeoSparkRunnableExample").setMaster("local[*]");
         conf.set("spark.serializer", KryoSerializer.class.getName());
@@ -23,7 +37,7 @@ public class MSBuildings_UCRstar {
         String resourceFolder = System.getProperty("user.dir")+"/src/main/resources/";
 
         String PolygonRDDInputLocation = resourceFolder + "MSBuildings_UCRstar_small.csv";
-        String outputFile = resourceFolder + "MSBuildings_saveAsTextFile_" + + new Random().nextInt();
+        String outputFile = resourceFolder + "MSBuildings_saveAsTextFile_" + new Random().nextInt();
 
         FileDataSplitter PolygonRDDSplitter = FileDataSplitter.WKT;
         Integer PolygonRDDNumPartitions = 1;
